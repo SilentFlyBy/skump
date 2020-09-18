@@ -1,4 +1,4 @@
-use clap::{App, Arg, ArgMatches, Clap};
+use clap::{App, Arg, ArgMatches};
 
 fn main() {
     let matches = App::new("My Super Program")
