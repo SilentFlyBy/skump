@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
 use rusqlite::{params, Connection};
-use std::{fs::metadata, path::Path};
+use std::{fs::metadata, path::Path, process};
 
 mod app;
+mod exit;
 mod list;
 
 struct Chat {
@@ -13,10 +14,17 @@ struct Chat {
 fn main() {
     let matches = app::build_app().get_matches();
 
-    match matches.subcommand() {
-        ("ls", Some(_sub_m)) => list_command(_sub_m).unwrap(),
-        _ => main_command(&matches).unwrap(),
+    let result = match matches.subcommand() {
+        ("ls", Some(_sub_m)) => list_command(_sub_m),
+        _ => main_command(&matches),
     };
+
+    match result {
+        Ok(_) => process::exit(exit::ExitCode::Ok.into()),
+        Err(_) => {
+            process::exit(exit::ExitCode::Error.into());
+        }
+    }
 }
 
 fn list_command(matches: &ArgMatches) -> Result<()> {
