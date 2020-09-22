@@ -1,17 +1,12 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
-use rusqlite::{Connection, NO_PARAMS};
+use rusqlite::Connection;
 use std::{fs::canonicalize, fs::metadata, path::PathBuf, process};
 
 mod app;
 mod db;
 mod exit;
 mod list;
-
-struct Chat {
-    id: u32,
-    name: String,
-}
 
 fn main() {
     let matches = app::build_app().get_matches();
@@ -34,23 +29,18 @@ fn main() {
 fn export_command(matches: &ArgMatches) -> Result<()> {
     let full_path = get_input_path(matches)?;
     let id: u32 = matches.value_of_t("id").unwrap();
+    let db = Connection::open(full_path)?;
+    let messages = db::get_messages(&db, id)?;
+    for m in messages {
+        print!("{}", m.body);
+    }
     Ok(())
 }
 
 fn list_command(matches: &ArgMatches) -> Result<()> {
     let full_path = get_input_path(matches)?;
     let db = Connection::open(full_path)?;
-    let mut select = db.prepare(db::GET_CONVERSATIONS)?;
-
-    let conversations: Vec<Chat> = select
-        .query_map(NO_PARAMS, |row| {
-            Ok(Chat {
-                id: row.get(0)?,
-                name: row.get(1)?,
-            })
-        })?
-        .map(|c| c.unwrap())
-        .collect();
+    let conversations = db::get_conversations(&db)?;
 
     for con in conversations {
         println!("{} {}", con.id, con.name);
