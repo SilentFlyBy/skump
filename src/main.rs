@@ -1,28 +1,17 @@
-use clap::{App, Arg, ArgMatches};
+use anyhow::{anyhow, Result};
+use clap::ArgMatches;
+use rusqlite::{params, Connection};
+use std::{fs::metadata, path::Path};
+
+mod app;
 mod list;
 
-fn main() {
-    let mut app = App::new("Skump - Skype dumper")
-        .version("0.1")
-        .author("Erik M. <erik@moldtmann.de>")
-        .about("Tool for exporting skype chats to various sources")
-        .arg(
-            Arg::with_name("output format")
-                .short('o')
-                .long("output-format")
-                .about("Sets the output format for a chat")
-                .takes_value(true)
-                .possible_values(&["console", "html", "pdf"])
-                .default_value("console"),
-        )
-        .arg(
-            Arg::with_name("INPUT")
-                .about("Sets the input file to use")
-                .index(1),
-        )
-        .subcommand(App::new("ls").about("lists chats").alias("list"));
+struct Chat {
+    Name: String,
+}
 
-    let matches = app.get_matches_mut();
+fn main() {
+    let matches = app::build_app().get_matches();
 
     match matches.subcommand() {
         ("ls", Some(_sub_m)) => list_command(_sub_m).unwrap(),
@@ -30,12 +19,34 @@ fn main() {
     };
 }
 
-fn list_command(_args: &ArgMatches) -> Result<(), ()> {
-    println!("list");
+fn list_command(matches: &ArgMatches) -> Result<()> {
+    if let Some(input) = matches.value_of("INPUT") {
+        let input = Path::new(input);
+        let md = metadata(input)?;
+        if !md.is_file() {
+            return Err(anyhow!(
+                "The input path '{}' is not a file.",
+                input.to_string_lossy()
+            ));
+        }
+
+        let db = Connection::open(input)?;
+        let mut select = db.prepare("")?;
+
+        let r: Vec<Chat> = select
+            .query_map(params![], |row| {
+                Ok(Chat {
+                    Name: String::from("Erik"),
+                })
+            })?
+            .map(|c| c.unwrap())
+            .collect();
+    }
+
     Ok(())
 }
 
-fn main_command(_args: &ArgMatches) -> Result<(), ()> {
+fn main_command(_args: &ArgMatches) -> Result<()> {
     println!("main");
     Ok(())
 }
