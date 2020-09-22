@@ -33,6 +33,7 @@ fn main() {
 
 fn export_command(matches: &ArgMatches) -> Result<()> {
     let full_path = get_input_path(matches)?;
+    let id: u32 = matches.value_of_t("id").unwrap();
     Ok(())
 }
 

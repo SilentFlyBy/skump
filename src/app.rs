@@ -21,6 +21,13 @@ pub fn build_app() -> App<'static> {
                     Arg::with_name("INPUT")
                         .about("Sets the input file to use")
                         .index(1),
+                )
+                .arg(
+                    Arg::with_name("id")
+                        .about("ID of the conversation")
+                        .long("id")
+                        .takes_value(true)
+                        .required(true),
                 ),
         )
         .subcommand(
