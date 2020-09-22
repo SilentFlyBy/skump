@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
-use rusqlite::{params, Connection, NO_PARAMS};
-use std::{fs::canonicalize, fs::metadata, path::Path, path::PathBuf, process};
+use rusqlite::{Connection, NO_PARAMS};
+use std::{fs::canonicalize, fs::metadata, path::PathBuf, process};
 
 mod app;
 mod db;
@@ -9,8 +9,8 @@ mod exit;
 mod list;
 
 struct Chat {
-    Id: u32,
-    Name: String,
+    id: u32,
+    name: String,
 }
 
 fn main() {
@@ -18,7 +18,8 @@ fn main() {
 
     let result = match matches.subcommand() {
         ("ls", Some(_sub_m)) => list_command(_sub_m),
-        _ => main_command(&matches),
+        ("export", Some(_sub_m)) => export_command(_sub_m),
+        _ => Ok(()),
     };
 
     match result {
@@ -30,40 +31,48 @@ fn main() {
     }
 }
 
+fn export_command(matches: &ArgMatches) -> Result<()> {
+    let full_path = get_input_path(matches)?;
+    Ok(())
+}
+
 fn list_command(matches: &ArgMatches) -> Result<()> {
-    if let Some(input) = matches.value_of("INPUT") {
-        let path = PathBuf::from(input);
-        let full_path = canonicalize(&path)?;
-        let md = metadata(&full_path)?;
-        if !md.is_file() {
-            return Err(anyhow!(
-                "The input path '{}' is not a file.",
-                full_path.to_string_lossy()
-            ));
-        }
+    let full_path = get_input_path(matches)?;
+    let db = Connection::open(full_path)?;
+    let mut select = db.prepare(db::GET_CONVERSATIONS)?;
 
-        let db = Connection::open(full_path)?;
-        let mut select = db.prepare(db::GET_CONVERSATIONS)?;
+    let conversations: Vec<Chat> = select
+        .query_map(NO_PARAMS, |row| {
+            Ok(Chat {
+                id: row.get(0)?,
+                name: row.get(1)?,
+            })
+        })?
+        .map(|c| c.unwrap())
+        .collect();
 
-        let conversations: Vec<Chat> = select
-            .query_map(NO_PARAMS, |row| {
-                Ok(Chat {
-                    Id: row.get(0)?,
-                    Name: row.get(1)?,
-                })
-            })?
-            .map(|c| c.unwrap())
-            .collect();
-
-        for con in conversations {
-            println!("{} {}", con.Id, con.Name);
-        }
+    for con in conversations {
+        println!("{} {}", con.id, con.name);
     }
 
     Ok(())
 }
 
-fn main_command(_args: &ArgMatches) -> Result<()> {
-    println!("main");
-    Ok(())
+fn get_input_path(matches: &ArgMatches) -> Result<PathBuf> {
+    let input = matches.value_of("INPUT");
+    if input.is_none() {
+        return Err(anyhow!("No value given for INPUT"));
+    }
+
+    let path = PathBuf::from(input.unwrap());
+    let full_path = canonicalize(&path)?;
+    let md = metadata(&full_path)?;
+    if !md.is_file() {
+        return Err(anyhow!(
+            "The input path '{}' is not a file.",
+            full_path.to_string_lossy()
+        ));
+    }
+
+    Ok(full_path)
 }
