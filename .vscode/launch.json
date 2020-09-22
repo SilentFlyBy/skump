@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Debug",
       "program": "${workspaceRoot}/target/debug/${workspaceRootFolderName}",
-      "args": ["ls", "sdfasdf"],
+      "args": ["ls", "/home/erik/Downloads/main.db"],
       "cwd": "${workspaceRoot}",
       "sourceLanguages": ["rust"],
       "cargo": {

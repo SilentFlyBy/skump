@@ -1,13 +1,15 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
-use rusqlite::{params, Connection};
-use std::{fs::metadata, path::Path, process};
+use rusqlite::{params, Connection, NO_PARAMS};
+use std::{fs::canonicalize, fs::metadata, path::Path, path::PathBuf, process};
 
 mod app;
+mod db;
 mod exit;
 mod list;
 
 struct Chat {
+    Id: u32,
     Name: String,
 }
 
@@ -21,7 +23,8 @@ fn main() {
 
     match result {
         Ok(_) => process::exit(exit::ExitCode::Ok.into()),
-        Err(_) => {
+        Err(e) => {
+            println!("{}", e.to_string());
             process::exit(exit::ExitCode::Error.into());
         }
     }
@@ -29,26 +32,32 @@ fn main() {
 
 fn list_command(matches: &ArgMatches) -> Result<()> {
     if let Some(input) = matches.value_of("INPUT") {
-        let input = Path::new(input);
-        let md = metadata(input)?;
+        let path = PathBuf::from(input);
+        let full_path = canonicalize(&path)?;
+        let md = metadata(&full_path)?;
         if !md.is_file() {
             return Err(anyhow!(
                 "The input path '{}' is not a file.",
-                input.to_string_lossy()
+                full_path.to_string_lossy()
             ));
         }
 
-        let db = Connection::open(input)?;
-        let mut select = db.prepare("")?;
+        let db = Connection::open(full_path)?;
+        let mut select = db.prepare(db::GET_CONVERSATIONS)?;
 
-        let r: Vec<Chat> = select
-            .query_map(params![], |row| {
+        let conversations: Vec<Chat> = select
+            .query_map(NO_PARAMS, |row| {
                 Ok(Chat {
-                    Name: String::from("Erik"),
+                    Id: row.get(0)?,
+                    Name: row.get(1)?,
                 })
             })?
             .map(|c| c.unwrap())
             .collect();
+
+        for con in conversations {
+            println!("{} {}", con.Id, con.Name);
+        }
     }
 
     Ok(())

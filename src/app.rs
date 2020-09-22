@@ -5,19 +5,23 @@ pub fn build_app() -> App<'static> {
         .version("0.1")
         .author("Erik M. <erik@moldtmann.de>")
         .about("Tool for exporting skype chats to various sources")
-        .arg(
-            Arg::with_name("output format")
-                .short('o')
-                .long("output-format")
-                .about("Sets the output format for a chat")
-                .takes_value(true)
-                .possible_values(&["console", "html", "pdf"])
-                .default_value("console"),
-        )
-        .arg(
-            Arg::with_name("INPUT")
-                .about("Sets the input file to use")
-                .index(1),
+        .subcommand(
+            App::new("export")
+                .about("Exports a chat")
+                .arg(
+                    Arg::with_name("output format")
+                        .short('o')
+                        .long("output-format")
+                        .about("Sets the output format for a chat")
+                        .takes_value(true)
+                        .possible_values(&["console", "html", "pdf"])
+                        .default_value("console"),
+                )
+                .arg(
+                    Arg::with_name("INPUT")
+                        .about("Sets the input file to use")
+                        .index(1),
+                ),
         )
         .subcommand(
             App::new("ls")
