@@ -26,7 +26,16 @@ pub fn get_conversations(db: &Connection) -> Result<Vec<Chat>> {
                 name: row.get(1)?,
             })
         })?
-        .map(|c| c.unwrap())
+        .map(|c| {
+            if c.is_ok() {
+                return c.unwrap();
+            } else {
+                return Chat {
+                    id: 0,
+                    name: String::from(""),
+                };
+            }
+        })
         .collect();
 
     Ok(chats)
@@ -34,16 +43,19 @@ pub fn get_conversations(db: &Connection) -> Result<Vec<Chat>> {
 
 pub fn get_messages(db: &Connection, id: u32) -> Result<Vec<Message>> {
     let mut select = db.prepare(GET_MESSAGES)?;
-    let messages: Vec<Message> = select
-        .query_map(params![id], |row| {
-            Ok(Message {
-                convo_id: id,
-                author: row.get(0)?,
-                body: row.get(2)?,
-            })
-        })?
-        .map(|c| c.unwrap())
-        .collect();
+    let mut messages = Vec::new();
+    let query = select.query_map(params![id], |row| {
+        Ok(Message {
+            convo_id: id,
+            author: row.get(0)?,
+            body: row.get(2)?,
+        })
+    })?;
+    for q in query {
+        if q.is_ok() {
+            messages.push(q.unwrap());
+        }
+    }
 
     Ok(messages)
 }

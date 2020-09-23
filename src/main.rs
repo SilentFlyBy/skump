@@ -32,7 +32,7 @@ fn export_command(matches: &ArgMatches) -> Result<()> {
     let db = Connection::open(full_path)?;
     let messages = db::get_messages(&db, id)?;
     for m in messages {
-        print!("{}", m.body);
+        println!("{}: {}", m.author, m.body);
     }
     Ok(())
 }
