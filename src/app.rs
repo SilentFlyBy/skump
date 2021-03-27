@@ -9,7 +9,7 @@ pub fn build_app() -> App<'static> {
             App::new("export")
                 .about("Exports a chat")
                 .arg(
-                    Arg::with_name("output format")
+                    Arg::new("output format")
                         .short('o')
                         .long("output-format")
                         .about("Sets the output format for a chat")
@@ -18,12 +18,12 @@ pub fn build_app() -> App<'static> {
                         .default_value("console"),
                 )
                 .arg(
-                    Arg::with_name("INPUT")
+                    Arg::new("INPUT")
                         .about("Sets the input file to use")
                         .index(1),
                 )
                 .arg(
-                    Arg::with_name("id")
+                    Arg::new("id")
                         .about("ID of the conversation")
                         .long("id")
                         .takes_value(true)
@@ -34,7 +34,7 @@ pub fn build_app() -> App<'static> {
             App::new("ls")
                 .about("lists chats")
                 .alias("list")
-                .arg(Arg::with_name("INPUT").index(1)),
+                .arg(Arg::new("INPUT").index(1)),
         );
 
     app

@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <title>Conversation</title>
+    <link rel="stylesheet" href="assets/css/stylesheet.css" />
+  </head>
+  <body>
+    <div class="messages">
+      {{#each messages ~}}
+        <div class="msg {{message_type}}">
+          {{text}}
+        </div>
+      {{/each ~}}
+    </div>
+  </body>
+</html>

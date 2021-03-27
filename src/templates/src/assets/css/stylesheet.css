@@ -1,0 +1,21 @@
+.msg {
+  padding: 1rem;
+  max-width: 66%;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.msg.me {
+  background-color: #d6f1f8;
+  align-self: flex-end;
+}
+
+.msg.them {
+  background-color: #aee3f2;
+  align-self: flex-start;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+}

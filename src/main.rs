@@ -6,14 +6,15 @@ use std::{fs::canonicalize, fs::metadata, path::PathBuf, process};
 mod app;
 mod db;
 mod exit;
-mod list;
+mod export;
+mod templates;
 
 fn main() {
     let matches = app::build_app().get_matches();
 
     let result = match matches.subcommand() {
-        ("ls", Some(_sub_m)) => list_command(_sub_m),
-        ("export", Some(_sub_m)) => export_command(_sub_m),
+        Some(("ls", _sub_m)) => list_command(_sub_m),
+        Some(("export", _sub_m)) => export_command(_sub_m),
         _ => Ok(()),
     };
 
@@ -31,10 +32,15 @@ fn export_command(matches: &ArgMatches) -> Result<()> {
     let id: u32 = matches.value_of_t("id").unwrap();
     let db = Connection::open(full_path)?;
     let messages = db::get_messages(&db, id)?;
-    for m in messages {
-        println!("{}: {}", m.author, m.body);
+    let user = db::get_self_user(&db)?;
+    let output = matches.value_of("output format").unwrap();
+
+    match output {
+        "console" => export::cli::to_cli(messages),
+        "html" => export::html::to_html(messages, user),
+        "pdf" => export::pdf::to_pdf(messages, user),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 fn list_command(matches: &ArgMatches) -> Result<()> {

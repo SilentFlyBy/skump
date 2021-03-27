@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rusqlite::{params, Connection, NO_PARAMS};
+use rusqlite::{params, Connection, Error, NO_PARAMS};
 
 pub struct Chat {
     pub id: u32,
@@ -9,12 +9,18 @@ pub struct Chat {
 pub struct Message {
     pub convo_id: u32,
     pub author: String,
+    pub display_name: String,
     pub body: String,
+}
+
+pub struct User {
+    pub name: String,
 }
 
 pub static GET_CONVERSATIONS: &'static str = "SELECT id, displayname FROM Conversations";
 pub static GET_MESSAGES: &'static str =
-    "SELECT from_dispname, timestamp, body_xml FROM Messages WHERE convo_id=?1";
+    "SELECT from_dispname, author, timestamp, body_xml FROM Messages WHERE convo_id=?1";
+pub static GET_SELF_USER: &'static str = "SELECT skypename FROM Accounts";
 
 pub fn get_conversations(db: &Connection) -> Result<Vec<Chat>> {
     let mut select = db.prepare(GET_CONVERSATIONS)?;
@@ -47,15 +53,23 @@ pub fn get_messages(db: &Connection, id: u32) -> Result<Vec<Message>> {
     let query = select.query_map(params![id], |row| {
         Ok(Message {
             convo_id: id,
-            author: row.get(0)?,
-            body: row.get(2)?,
+            display_name: row.get(0)?,
+            author: row.get(1)?,
+            body: row.get(3)?,
         })
     })?;
     for q in query {
         if q.is_ok() {
-            messages.push(q.unwrap());
+            messages.push(q?);
         }
     }
 
     Ok(messages)
+}
+
+pub fn get_self_user(db: &Connection) -> Result<User, Error> {
+    let mut select = db.prepare(GET_SELF_USER)?;
+    let query = select.query_map(params![], |row| Ok(User { name: row.get(0)? }))?;
+    let first = query.into_iter().nth(0).unwrap();
+    first
 }
